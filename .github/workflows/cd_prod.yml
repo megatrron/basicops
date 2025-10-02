@@ -1,0 +1,25 @@
+name: Deploy to production 
+on:
+  push:
+    branches: [ prod ]
+
+jobs:
+  redeploy_everything:
+    runs-on: ubuntu-latest
+    name: Deploying everything to the production cluster
+    steps:
+      - run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
+          ssh -i ~/ssh_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@ec2-13-203-67-157.ap-south-1.compute.amazonaws.com -t "
+            cd basicops/ &&
+            git pull origin prod &&
+            export PATH=/root/.nvm/versions/node/v22.13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin &&
+            npm install -g pnpm &&
+            pnpm install &&
+            pnpm run build &&
+            pm2 restart web &&
+            pm2 restart http-server &&
+            pm2 restart ws-server
+          "
+
