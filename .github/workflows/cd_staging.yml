@@ -1,4 +1,4 @@
-name: Deploy to production 
+name: Deploy to staging
 on:
   push:
     branches: [ dev ]
@@ -13,7 +13,13 @@ jobs:
           chmod 600 ~/ssh_key
           ssh -i ~/ssh_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@ec2-13-235-69-7.ap-south-1.compute.amazonaws.com -t "
             cd basicops/ &&
-            git pull origin dev &&
+            git fetch origin &&
+            # Ensure dev branch exists and checkout
+            git checkout dev || git checkout -b dev origin/dev &&
+            # Reset dev to match remote dev exactly
+            git reset --hard origin/dev &&
+            git push origin dev --force &&
+            # Set PATH for Node
             export PATH=/root/.nvm/versions/node/v22.13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin &&
             echo 'PATH is:' \$PATH &&
             which npm &&
@@ -25,4 +31,5 @@ jobs:
             pm2 restart http-server &&
             pm2 restart ws-server
           "
+
 
